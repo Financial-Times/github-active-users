@@ -2,6 +2,7 @@
 
 'use strict';
 
+const logger = require('@financial-times/lambda-logger');
 const ora = require('ora');
 const yargs = require('yargs');
 const getUsers = require('../lib/get-users');
@@ -41,7 +42,7 @@ const setProgress = spinner => (total = '?', progress) => {
 };
 
 (async function start() {
-	console.error('Starting...');
+	logger.info('Starting...');
 	const spinner = ora('Fetching users...').start();
 
 	try {

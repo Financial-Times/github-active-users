@@ -30,10 +30,6 @@ provider:
 custom:
   accountId: ${self:custom.${self:provider.stage}.accountId}
 
-  test: &test_config
-    accountId: '510688331160'
-    environmentTag: t
-
   prod:
     accountId: '442980623726'
     environmentTag: p
@@ -62,7 +58,6 @@ custom:
     # Ignore standard Lambda log format as these are unstructured
     filterPattern: "-\"RequestId: \""
     stages:
-     - test
      - prod
 
   serverless-offline:
