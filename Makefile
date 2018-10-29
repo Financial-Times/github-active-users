@@ -21,4 +21,4 @@ node_modules/@financial-times/rel-engage/index.mk:
 
 verify:
 
-de install:
+install:
