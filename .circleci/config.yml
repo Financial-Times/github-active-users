@@ -1,0 +1,71 @@
+version: 2.1
+
+references:
+  workspace_root: &workspace_root
+    ~/project/
+
+  attach_workspace: &attach_workspace
+    attach_workspace:
+      at: *workspace_root
+
+  restore_node_modules: &restore_node_modules
+    restore_cache:
+      keys:
+        - v1-dependency-npm-{{ checksum "package.json" }}-
+        - v1-dependency-npm-{{ checksum "package.json" }}
+        - v1-dependency-npm-
+
+  cache_node_modules: &cache_node_modules
+    save_cache:
+      key: v1-dependency-npm-{{ checksum "package.json" }}-{{ epoch }}
+      paths:
+        - ./node_modules/
+
+executors:
+  node:
+    docker:
+      - image: circleci/node:8.12.0-browsers
+
+jobs:
+  install:
+    executor: node
+    steps:
+      - checkout
+
+      - *restore_node_modules
+
+      - run:
+          name: Install npm dependencies
+          command: npm install --no-save
+
+      - *cache_node_modules
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  lint:
+    executor: node
+    steps:
+      - *attach_workspace
+
+      - run:
+          name: Lint
+          command: make verify -j 3
+
+
+workflows:
+  version: 2.1
+  build-and-deploy:
+    jobs:
+      - install
+      - lint:
+          requires:
+            - install
+
+experimental:
+  notify:
+    branches:
+      only:
+        - master
