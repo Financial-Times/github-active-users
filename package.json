@@ -2,17 +2,18 @@
   "name": "github-active-users",
   "version": "0.0.1",
   "description": "Output Financial-Times github organisation users with recent contributions",
-  "main": "index.js",
+  "main": "bin/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "bin": "index.js",
+  "bin": "bin/index.js",
   "author": "FT Reliability Engineering <reliability.engineering@ft.com>",
   "license": "MIT",
   "devDependencies": {
     "@financial-times/rel-engage": "^2.1.2"
   },
   "dependencies": {
+    "@financial-times/lambda-logger": "^1.1.1",
     "console.table": "^0.10.0",
     "got": "^9.2.2",
     "lodash.has": "^4.5.2",

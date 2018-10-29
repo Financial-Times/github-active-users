@@ -1,0 +1,93 @@
+service:
+  name: github-active-users
+
+frameworkVersion: ">=1.2.8 <2.0.0"
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stackTags:
+    description: Audit active Github users
+    systemCode: ${self:service}
+    environment: ${self:custom.${self:provider.stage}.environmentTag}
+    teamDL: reliability.engineering@ft.com
+  region: ${self:custom.${self:provider.stage}.region, env:AWS_REGION, 'eu-west-1'}
+  stage: ${opt:stage}
+  # This role should be created using aws-composer. This is looked up against the current account
+  role: arn:aws:iam::${self:custom.accountId}:role/FTApplicationRoleFor_${self:service.name}
+  memorySize: 256
+  timeout: 15
+  logRetentionInDays: 30
+  deploymentBucket: artefacts.${self:service.name}.${self:custom.accountId}.${self:provider.region}
+  environment:
+    ENVIRONMENT: ${self:provider.stage}
+    NODE_ENV: ${self:custom.${self:provider.stage}.NODE_ENV, 'production'}
+    SYSTEM_CODE: ${self:service.name}
+    CONSOLE_LOG_LEVEL: debug
+    GITHUB_ORGANISATION: ${env:GITHUB_ORGANISATION}
+    GITHUB_ACCESS_TOKEN: ${env:GITHUB_ACCESS_TOKEN}
+
+custom:
+  accountId: ${self:custom.${self:provider.stage}.accountId}
+
+  test: &test_config
+    accountId: '510688331160'
+    environmentTag: t
+
+  prod:
+    accountId: '442980623726'
+    environmentTag: p
+
+  local:
+    <<: *test_config
+    NODE_ENV: development
+
+  eu-west-1:
+    splunkIndexerArnVariable: aws-composer-auditing-global-stack.SplunkCloudIndexerLambdaarn
+  regionFallback:
+    splunkIndexerArnVariable: aws-composer-auditing-${self:provider.region}-splunk.SplunkCloudIndexerGenericLambdaArn
+
+  webpack:
+    webpackConfig: ./node_modules/@financial-times/rel-engage/packages/serverless/webpack.config.js
+    # Enable to bundle used node_modules files separately to the function bundle
+    # this is slow but may be useful if a module is incompatible with webpack
+    includeModules:
+      forceInclude:
+
+
+  # Specify a Lambda function to forward CloudWatch logs to
+  logForwarding:
+    # Look up the existing composer Splunk Indexer function deployed to the account
+    destinationARN: ${cf:${self:custom.${self:provider.region}.splunkIndexerArnVariable, self:custom.regionFallback.splunkIndexerArnVariable}}
+    # Ignore standard Lambda log format as these are unstructured
+    filterPattern: "-\"RequestId: \""
+    stages:
+     - test
+     - prod
+
+  serverless-offline:
+    # httpsProtocol: certs
+    dontPrintOutput: true
+    host: local.in.ft.com
+    port: ${env:PORT, '3000'}
+    noTimeout: true
+
+plugins:
+  - serverless-webpack
+  - serverless-log-forwarding
+  - serverless-offline
+
+functions:
+  reporter-generator:
+    handler: src/handlers/user-logging-handler.handler
+    events:
+      - schedule:
+          description: 'Trigger Github Active users stats report'
+          input: '{}'
+          rate: rate(1 hour)
+          enabled: true
+
+package:
+  # Generate a separate webpack bundle for each function
+  individually: true
+  # We do not include include/exclude as this is handled by serverless-webpack
