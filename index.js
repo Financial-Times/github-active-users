@@ -21,7 +21,10 @@ const { argv } = yargs
 	.alias('p', 'people')
 	.default('o', 'Financial-Times')
 	.default('p', true)
-	.describe('k', 'the github API key to use for Github GraphQL requests')
+	.describe(
+		'k',
+		'the github API key to use for Github GraphQL requests. Requires read:org, read:user, repo scopes',
+	)
 	.describe('o', 'the github organisation to lookup')
 	.describe(
 		'p',
