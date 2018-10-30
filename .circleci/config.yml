@@ -25,6 +25,9 @@ executors:
   node:
     docker:
       - image: circleci/node:8.12.0-browsers
+  python-node:
+    docker:
+      - image: circleci/python:3.6.6-node
 
 jobs:
   install:
@@ -55,6 +58,20 @@ jobs:
           command: make verify -j 3
 
 
+  release_prod:
+    executor: node
+    steps:
+      - *attach_workspace
+
+      - run:
+          name: Install AWS CLI
+          command: sudo pip install awscli
+
+      - deploy:
+          name: Serverless deploy prod
+          command: make env && .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy
+
+NODE_ENV: production
 workflows:
   version: 2.1
   build-and-deploy:
@@ -63,6 +80,13 @@ workflows:
       - lint:
           requires:
             - install
+      - release_prod:
+          context: rel-eng-creds
+          requires:
+            - lint
+          filters:
+            branches:
+              only: master
 
 experimental:
   notify:

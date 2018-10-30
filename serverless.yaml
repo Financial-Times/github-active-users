@@ -23,7 +23,7 @@ provider:
     ENVIRONMENT: ${self:provider.stage}
     NODE_ENV: ${self:custom.${self:provider.stage}.NODE_ENV, 'production'}
     SYSTEM_CODE: ${self:service.name}
-    CONSOLE_LOG_LEVEL: debug
+    CONSOLE_LOG_LEVEL: info
     GITHUB_ORGANISATION: ${env:GITHUB_ORGANISATION}
     GITHUB_ACCESS_TOKEN: ${env:GITHUB_ACCESS_TOKEN}
 

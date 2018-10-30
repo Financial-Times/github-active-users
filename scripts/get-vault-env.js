@@ -2,6 +2,8 @@
 
 'use strict';
 
+// Removed context handling in this script as it's a one off-experiment rather than a product
+// We should look at making a product context optional
 // TODO: Move to shared reliability-engineering executable
 
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
@@ -13,7 +15,7 @@ const { writeFile } = require('fs');
 
 const exec = promisify(shell.exec);
 const write = promisify(writeFile);
-const [, , environment, contextName, appName] = process.argv;
+const [, , environment, appName] = process.argv;
 const { CI = false } = process.env;
 
 const run = command =>
@@ -64,10 +66,6 @@ const readVaultFetch = (path, env = 'test', token) =>
 		.then(handleFetch)
 		.then(json => json.data || {});
 
-// Combine the vars preferring Context Env Vars over App vars
-const combineVars = ([contextVars, appVars]) =>
-	Object.assign({}, appVars, contextVars);
-
 const formatVars = object =>
 	Object.entries(object)
 		.sort(([a], [b]) => {
@@ -83,25 +81,18 @@ const logError = (...args) => console.error(...wrapRed(...args));
 
 const vaultFetch = () =>
 	authenticateVaultFetch().then(token => {
-		return Promise.all([
-			readVaultFetch(`PRODUCTS/${contextName}`, environment, token),
-			readVaultFetch(appName, environment, token),
-		]);
+		return readVaultFetch(appName, environment, token);
 	});
 
 const vaultCLI = () =>
 	authenticateVaultCLI().then(() => {
-		return Promise.all([
-			readVaultCLI(`PRODUCTS/${contextName}`, environment),
-			readVaultCLI(appName, environment),
-		]);
+		return readVaultCLI(appName, environment);
 	});
 
 console.log(
 	`Fetching credentials for .env from Vault.\n\tApplication Name: ${appName}\n\tEnvironment: ${environment}\n\tIs CI?: ${CI}`,
 );
 (CI ? vaultFetch() : vaultCLI())
-	.then(combineVars)
 	.then(formatVars)
 	.then(formattedVars => write('.env', formattedVars))
 	.then(() => {

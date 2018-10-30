@@ -34,8 +34,11 @@ node_modules/@financial-times/rel-engage/index.mk:
 
 .PHONY: env
 env: ## env: Generate a new .env file from Vault
-	./scripts/get-vault-env.js prod github-active-users github-active-users
+	./scripts/get-vault-env.js prod github-active-users
 
 verify:
 
 install:
+
+deploy: ## deploy: Deploy serverless application to O&R production account
+	serverless deploy --stage prod
