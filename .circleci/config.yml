@@ -71,7 +71,6 @@ jobs:
           name: Serverless deploy prod
           command: make env && .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy
 
-NODE_ENV: production
 workflows:
   version: 2.1
   build-and-deploy:
