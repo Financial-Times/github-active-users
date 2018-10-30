@@ -127,9 +127,17 @@ const vaultCLI = () =>
 		]);
 	});
 
-console.log(
-	`Fetching credentials for .env from Vault.\n\tApplication Name: ${appName}\n\tEnvironment: ${environment}\n\tIs CI?: ${CI}`,
-);
+const logMessage = [
+	`Fetching credentials for .env from Vault.`,
+	projectName &&
+		`Project Name: ${projectName}, ``Application Name: ${appName}`,
+	`Environment: ${environment}`,
+	`Is CI?: ${CI}`,
+]
+	.filter(x => x)
+	.join('\n\t');
+
+console.log(logMessage);
 (CI ? vaultFetch() : vaultCLI())
 	.then(combineVars)
 	.then(formatVars)
