@@ -129,8 +129,8 @@ const vaultCLI = () =>
 
 const logMessage = [
 	`Fetching credentials for .env from Vault.`,
-	projectName &&
-		`Project Name: ${projectName}, ``Application Name: ${appName}`,
+	projectName && `Project Name: ${projectName}`,
+	`Application Name: ${appName}`,
 	`Environment: ${environment}`,
 	`Is CI?: ${CI}`,
 ]
