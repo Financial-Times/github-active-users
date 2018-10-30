@@ -34,7 +34,7 @@ node_modules/@financial-times/rel-engage/index.mk:
 
 .PHONY: env
 env: ## env: Generate a new .env file from Vault
-	./scripts/get-vault-env.js prod github-active-users
+	./scripts/get-vault-env.js -e prod -a github-active-users
 
 verify:
 

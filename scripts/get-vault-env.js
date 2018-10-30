@@ -2,8 +2,6 @@
 
 'use strict';
 
-// Removed context handling in this script as it's a one off-experiment rather than a product
-// We should look at making a product context optional
 // TODO: Move to shared reliability-engineering executable
 
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
@@ -12,10 +10,36 @@ const shell = require('child_process');
 const fetch = require('node-fetch');
 const { promisify } = require('util');
 const { writeFile } = require('fs');
+const yargs = require('yargs');
+
+const { argv } = yargs
+	.usage('Usage: $0 [options]')
+	.example(
+		'$0 -p heimdall -a heimdall-ui -e prod',
+		'fetches secrets from FT vault and writes to a .env file in the project root directory',
+	)
+	.alias('p', 'project')
+	.alias('a', 'app-name')
+	.alias('e', 'environment')
+	.describe(
+		'e',
+		'the environment to fetch secrets for. Takes secrets from the secret/teams/reliability-engineering/PRODUCTS/$project/$environment and secret/teams/reliability-engineering/$app-name/$environment directories',
+	)
+	.describe(
+		'p',
+		'the vault project, located in the secret/teams/reliability-engineering/PRODUCTS directory',
+	)
+	.describe(
+		'a',
+		'the vault app name, located in the secret/teams/reliability-engineering directory',
+	)
+	.demandOption(['e', 'a'])
+	.help('h')
+	.alias('h', 'help');
 
 const exec = promisify(shell.exec);
 const write = promisify(writeFile);
-const [, , environment, appName] = process.argv;
+const { p: projectName, a: appName, e: environment } = argv;
 const { CI = false } = process.env;
 
 const run = command =>
@@ -66,6 +90,10 @@ const readVaultFetch = (path, env = 'test', token) =>
 		.then(handleFetch)
 		.then(json => json.data || {});
 
+// Combine the vars preferring Context Env Vars over App vars
+const combineVars = ([contextVars, appVars]) =>
+	Object.assign({}, appVars, contextVars);
+
 const formatVars = object =>
 	Object.entries(object)
 		.sort(([a], [b]) => {
@@ -81,18 +109,29 @@ const logError = (...args) => console.error(...wrapRed(...args));
 
 const vaultFetch = () =>
 	authenticateVaultFetch().then(token => {
-		return readVaultFetch(appName, environment, token);
+		return Promise.all([
+			projectName
+				? readVaultFetch(`PRODUCTS/${projectName}`, environment, token)
+				: Promise.resolve({}),
+			readVaultFetch(appName, environment, token),
+		]);
 	});
 
 const vaultCLI = () =>
 	authenticateVaultCLI().then(() => {
-		return readVaultCLI(appName, environment);
+		return Promise.all([
+			projectName
+				? readVaultCLI(`PRODUCTS/${projectName}`, environment)
+				: Promise.resolve({}),
+			readVaultCLI(appName, environment),
+		]);
 	});
 
 console.log(
 	`Fetching credentials for .env from Vault.\n\tApplication Name: ${appName}\n\tEnvironment: ${environment}\n\tIs CI?: ${CI}`,
 );
 (CI ? vaultFetch() : vaultCLI())
+	.then(combineVars)
 	.then(formatVars)
 	.then(formattedVars => write('.env', formattedVars))
 	.then(() => {
