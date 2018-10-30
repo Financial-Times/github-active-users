@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 'use strict';
 
 const logger = require('@financial-times/lambda-logger');
