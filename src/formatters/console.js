@@ -1,11 +1,12 @@
 'use strict';
 
-const logger = require('@financial-times/lambda-logger');
+/* eslint-disable no-console */
+
 const cTable = require('console.table');
 
 const logTable = (title, headings, data) => {
-	logger.info(title);
-	logger.info(
+	console.log(title);
+	console.log(
 		cTable.getTable(
 			headings,
 			data.reduce((table, entry) => {

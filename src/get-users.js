@@ -79,6 +79,25 @@ const getGithubGraphQlClient = githubAccessToken =>
 		retry: {
 			retries: 2,
 			methods: ['POST'],
+			statusCodes: [403],
+			maxRetryAfter: 70,
+		},
+		hooks: {
+			beforeRetry: [
+				(options, error, retryCount) => {
+					logger.warn(
+						{
+							event: 'GITHUB_REQUEST_RETRY',
+							error:
+								(error.response && error.response.body) ||
+								error,
+							retryCount,
+							body: options.body,
+						},
+						'Request failed, retrying',
+					);
+				},
+			],
 		},
 		agent: {
 			https: new https.Agent({ keepAlive: true }),
@@ -94,12 +113,12 @@ const makeRequest = async (client, query) => {
 			},
 		});
 	} catch (error) {
-		if (has(error, 'body')) {
+		if (has(error, 'response')) {
 			logger.error(
 				{
 					errors:
-						(error.body && error.body.errors) ||
-						error.body ||
+						(error.response.body && error.response.body.errors) ||
+						error.response.body ||
 						error.message,
 					statusCode: error.statusCode,
 				},
@@ -107,7 +126,7 @@ const makeRequest = async (client, query) => {
 			);
 			throw new Error('Github response error');
 		}
-		logger.error({ error }, 'An error occured');
+		logger.error({ error, query }, 'An error occured');
 		throw error;
 	}
 
@@ -268,14 +287,14 @@ const getUsers = async ({
 			nodes.map(async node => {
 				const { publicRepositoriesContributedTo } = node;
 				if (publicRepositoriesContributedTo.pageInfo.hasNextPage) {
-					logger.debug(
+					logger.info(
 						{
 							event: 'USER_EXTRA_PUBLIC_REPOSITORIES',
 							login: node.login,
 							totalCount:
 								node.publicRepositoriesContributedTo.totalCount,
 						},
-						'Fetching additional public repositories for user',
+						'Fetching additional public repositories for user as they exceed the maximum page size',
 					);
 					publicRepositoriesContributedTo.nodes = [
 						...publicRepositoriesContributedTo.nodes,
