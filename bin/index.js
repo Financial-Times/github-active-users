@@ -5,8 +5,8 @@
 const logger = require('@financial-times/lambda-logger');
 const ora = require('ora');
 const yargs = require('yargs');
-const getUsers = require('../lib/get-users');
-const consoleFormatter = require('../lib/formatters/console');
+const getUsers = require('../src/get-users');
+const consoleFormatter = require('../src/formatters/console');
 
 const { argv } = yargs
 	.usage('Usage: $0 [options]')
