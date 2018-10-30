@@ -59,7 +59,7 @@ jobs:
 
 
   release_prod:
-    executor: node
+    executor: python-node
     steps:
       - *attach_workspace
 
