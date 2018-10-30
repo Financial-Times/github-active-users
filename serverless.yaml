@@ -16,7 +16,7 @@ provider:
   # This role should be created using aws-composer. This is looked up against the current account
   role: arn:aws:iam::${self:custom.accountId}:role/FTApplicationRoleFor_${self:service.name}
   memorySize: 256
-  timeout: 15
+  timeout: 300
   logRetentionInDays: 30
   deploymentBucket: artefacts.${self:service.name}.${self:custom.accountId}.${self:provider.region}
   environment:
@@ -29,6 +29,7 @@ provider:
 
 custom:
   accountId: ${self:custom.${self:provider.stage}.accountId}
+  runbookUrl: https://github.com/Financial-Times/${self:service.name}/blob/${env:CIRCLE_SHA1, 'master'}/README.md
 
   prod:
     accountId: '442980623726'
@@ -46,6 +47,15 @@ custom:
     includeModules:
       forceInclude:
 
+  alerts:
+    # TODO: add alert topics
+    function:
+      - functionErrors
+    definitions:
+      functionErrors:
+        description: 'Error count breached threshold. <${self:custom.runbookUrl}|View Runbook>'
+        treatMissingData: ignore
+        threshold: 1
 
   # Specify a Lambda function to forward CloudWatch logs to
   logForwarding:
@@ -58,6 +68,7 @@ custom:
 
 plugins:
   - serverless-webpack
+  - serverless-plugin-aws-alerts
   - serverless-log-forwarding
 
 functions:

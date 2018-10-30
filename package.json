@@ -11,7 +11,8 @@
   "license": "MIT",
   "devDependencies": {
     "@financial-times/rel-engage": "^2.1.2",
-    "node-fetch": "^2.2.0"
+    "node-fetch": "^2.2.0",
+    "serverless-plugin-aws-alerts": "^1.2.4"
   },
   "dependencies": {
     "@financial-times/lambda-logger": "^1.1.1",
