@@ -5,10 +5,30 @@ const has = require('lodash.has');
 const got = require('got');
 const https = require('https');
 
-// We only care about the total so the lowest page size will work
-const REPOSITORIES_PAGE_SIZE = 1;
 // Queries are fairly slow with large results. Setting this too large busts the github API and results in 502s
 const USERS_PAGE_SIZE = 10;
+
+const getRepositoryQuery = ({ cursor, privacy, pageSize = 1 }) => {
+	const repositoriesQuery = [
+		`first: ${pageSize}`,
+		`includeUserRepositories: false`,
+		`privacy: ${privacy}`,
+		cursor && `after: "${cursor}"`,
+	]
+		.filter(x => x)
+		.join(', ');
+
+	return `repositoriesContributedTo(${repositoriesQuery}) {
+		totalCount
+		pageInfo {
+			hasNextPage
+			endCursor
+		}
+		nodes {
+			nameWithOwner
+		}
+	}`;
+};
 
 const getUsersQuery = ({ cursor, first, organisation }) => {
 	const membersQueryList = [];
@@ -19,20 +39,7 @@ const getUsersQuery = ({ cursor, first, organisation }) => {
 		membersQueryList.push(`after: "${cursor}"`);
 	}
 	const membersQuery = membersQueryList.join(', ');
-	const repositoriesQueryList = [
-		`first: ${REPOSITORIES_PAGE_SIZE}`,
-		`includeUserRepositories: false`,
-	];
 
-	const privacyQuery = privacyStatus => `privacy: ${privacyStatus}`;
-	const publicRepositoriesQuery = [
-		...repositoriesQueryList,
-		privacyQuery('PUBLIC'),
-	].join(', ');
-	const privateRepositoriesQuery = [
-		...repositoriesQueryList,
-		privacyQuery('PRIVATE'),
-	].join(', ');
 	return `{
 	organization(login: "${organisation}") {
 		members(${membersQuery}) {
@@ -40,12 +47,14 @@ const getUsersQuery = ({ cursor, first, organisation }) => {
 				login
 				name
 				email
-				publicRepositoriesContributedTo: repositoriesContributedTo(${publicRepositoriesQuery}) {
-					totalCount
-				}
-				privateRepositoriesContributedTo: repositoriesContributedTo(${privateRepositoriesQuery}) {
-					totalCount
-				}
+				publicRepositoriesContributedTo: ${getRepositoryQuery({
+					privacy: 'PUBLIC',
+					pageSize: 100,
+				})}
+				privateRepositoriesContributedTo: ${getRepositoryQuery({
+					privacy: 'PRIVATE',
+					pageSize: 1,
+				})}
 			}
 			totalCount
 			pageInfo {
@@ -76,12 +85,77 @@ const getGithubGraphQlClient = githubAccessToken =>
 		},
 	});
 
-const makeRequest = (client, query) => {
-	return client.post('/graphql', {
-		body: {
-			query,
-		},
-	});
+const makeRequest = async (client, query) => {
+	let response;
+	try {
+		response = await client.post('/graphql', {
+			body: {
+				query,
+			},
+		});
+	} catch (error) {
+		if (has(error, 'body')) {
+			logger.error(
+				{
+					errors:
+						(error.body && error.body.errors) ||
+						error.body ||
+						error.message,
+					statusCode: error.statusCode,
+				},
+				'The response returned with errors',
+			);
+			throw new Error('Github response error');
+		}
+		logger.error({ error }, 'An error occured');
+		throw error;
+	}
+
+	return response;
+};
+
+const getUserPublicRepositories = async ({ login, startCursor, client }) => {
+	const iterate = async cursor => {
+		const response = await makeRequest(
+			client,
+			`{
+				user(login:"${login}") {
+					repositoriesContributedTo: ${getRepositoryQuery({
+						privacy: 'PUBLIC',
+						pageSize: 100,
+						cursor,
+					})}
+				}
+			}`,
+		);
+		const { body } = response;
+		if (!has(body, 'data.user.repositoriesContributedTo')) {
+			logger.error(
+				{
+					body,
+					statusCode: response.statusCode,
+				},
+				'The response returned with an unexpected data format',
+			);
+			throw new Error('Github response error');
+		}
+
+		logger.debug(
+			{
+				event: 'GITHUB_USER_RESPONSE',
+				contents: response.body.data.user,
+			},
+			'Received github user',
+		);
+
+		const {
+			nodes,
+			pageInfo: { endCursor, hasNextPage },
+		} = body.data.user.repositoriesContributedTo;
+
+		return hasNextPage ? [...nodes, ...(await iterate(endCursor))] : nodes;
+	};
+	return iterate(startCursor);
 };
 
 const getPeople = async ({ client, organisation }) => {
@@ -129,31 +203,11 @@ const getPeople = async ({ client, organisation }) => {
 };
 
 const fetchUsers = async ({ cursor, client, organisation }) => {
-	let response;
-	let body;
-	try {
-		response = await makeRequest(
-			client,
-			getUsersQuery({ cursor, first: USERS_PAGE_SIZE, organisation }),
-		);
-		({ body } = response);
-	} catch (error) {
-		if (has(error, 'body')) {
-			logger.error(
-				{
-					errors:
-						(error.body && error.body.errors) ||
-						error.body ||
-						error.message,
-					statusCode: error.statusCode,
-				},
-				'The response returned with errors',
-			);
-			throw new Error('Github response error');
-		}
-		logger.error({ error }, 'An error occured');
-		throw error;
-	}
+	const response = await makeRequest(
+		client,
+		getUsersQuery({ cursor, first: USERS_PAGE_SIZE, organisation }),
+	);
+	const { body } = response;
 	if (!has(body, 'data.organization.members')) {
 		logger.error(
 			{
@@ -210,15 +264,44 @@ const getUsers = async ({
 			'Received github users',
 		);
 
-		const users = nodes.map(node => ({
-			name: node.name || '',
-			login: node.login,
-			email: node.email,
-			publicRepositoryContributionCount:
-				node.publicRepositoriesContributedTo.totalCount,
-			privateRepositoryContributionCount:
-				node.privateRepositoriesContributedTo.totalCount,
-		}));
+		const users = await Promise.all(
+			nodes.map(async node => {
+				const { publicRepositoriesContributedTo } = node;
+				if (publicRepositoriesContributedTo.pageInfo.hasNextPage) {
+					logger.debug(
+						{
+							event: 'USER_EXTRA_PUBLIC_REPOSITORIES',
+							login: node.login,
+							totalCount:
+								node.publicRepositoriesContributedTo.totalCount,
+						},
+						'Fetching additional public repositories for user',
+					);
+					publicRepositoriesContributedTo.nodes = [
+						...publicRepositoriesContributedTo.nodes,
+						...(await getUserPublicRepositories({
+							login: node.login,
+							client: graphqlClient,
+							startCursor:
+								publicRepositoriesContributedTo.pageInfo
+									.endCursor,
+						})),
+					];
+				}
+				const publicRepositoryCount = node.publicRepositoriesContributedTo.nodes.filter(
+					({ nameWithOwner }) =>
+						nameWithOwner.startsWith(`${organisation}/`),
+				).length;
+				return {
+					name: node.name || '',
+					login: node.login,
+					email: node.email,
+					publicRepositoryContributionCount: publicRepositoryCount,
+					privateRepositoryContributionCount:
+						node.privateRepositoriesContributedTo.totalCount,
+				};
+			}),
+		);
 		return hasNextPage ? [...users, ...(await iterate(endCursor))] : users;
 	};
 	try {
