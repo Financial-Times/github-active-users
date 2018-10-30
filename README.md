@@ -31,4 +31,4 @@ The counts shown indicate the count of repositories for which there are any cont
 
 ## Troubleshooting
 
-As well as the afformentioned 502 errors when increasing batch size, occasionally 403s are encountered due to github rate limiting. There is internal logic to retry as long as the `Retry-After` header is within a threshold of 70 seconds, however if this is persistent it may be prudent to make a change to throttle to 1 request per second to the github API.
+As well as the afformentioned 502 errors when increasing batch size, occasionally 403s are encountered due to github rate limiting. There is already internal logic to retry as long as the `Retry-After` header is within a threshold of 70 seconds, and requests are throttled to only allow 1 per second but this still seems to trigger something on occasion.

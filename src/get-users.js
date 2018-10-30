@@ -1,6 +1,7 @@
 'use strict';
 
 const logger = require('@financial-times/lambda-logger');
+const pThrottle = require('p-throttle');
 const has = require('lodash.has');
 const got = require('got');
 const https = require('https');
@@ -104,7 +105,9 @@ const getGithubGraphQlClient = githubAccessToken =>
 		},
 	});
 
-const makeRequest = async (client, query) => {
+const onePerSecond = func => pThrottle(func, 1, 1000);
+
+const makeRequest = onePerSecond(async (client, query) => {
 	let response;
 	try {
 		response = await client.post('/graphql', {
@@ -131,7 +134,7 @@ const makeRequest = async (client, query) => {
 	}
 
 	return response;
-};
+});
 
 const getUserPublicRepositories = async ({ login, startCursor, client }) => {
 	const iterate = async cursor => {
