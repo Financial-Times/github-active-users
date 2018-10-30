@@ -128,7 +128,7 @@ const getPeople = async ({ client, organisation }) => {
 		}, {});
 };
 
-const getUsers = async ({ cursor, client, organisation }) => {
+const fetchUsers = async ({ cursor, client, organisation }) => {
 	let response;
 	let body;
 	try {
@@ -185,7 +185,7 @@ const enrichUsersWithPeopleData = (users, people) => {
 	);
 };
 
-module.exports = async ({
+const getUsers = async ({
 	organisation,
 	githubAccessToken,
 	onProgress,
@@ -195,7 +195,7 @@ module.exports = async ({
 	let fetchedCount = 0;
 
 	const iterate = async cursor => {
-		const { nodes, totalCount, endCursor, hasNextPage } = await getUsers({
+		const { nodes, totalCount, endCursor, hasNextPage } = await fetchUsers({
 			client: graphqlClient,
 			cursor,
 			organisation,
@@ -231,3 +231,5 @@ module.exports = async ({
 		throw error;
 	}
 };
+
+module.exports = getUsers;

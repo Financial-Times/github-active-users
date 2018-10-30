@@ -66,8 +66,17 @@ custom:
     stages:
      - prod
 
+
+  serverless-offline:
+    dontPrintOutput: true
+    prefix: ''
+    host: local.in.ft.com
+    port: 3000
+    noTimeout: true
+
 plugins:
   - serverless-webpack
+  - serverless-offline
   - serverless-plugin-aws-alerts
   - serverless-log-forwarding
 
@@ -80,6 +89,9 @@ functions:
           input: '{}'
           rate: rate(1 hour)
           enabled: true
+      - http:
+          path: /
+          method: get
 
 package:
   # Generate a separate webpack bundle for each function

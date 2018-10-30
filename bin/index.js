@@ -33,9 +33,11 @@ const { argv } = yargs
 	.help('h')
 	.alias('h', 'help');
 
-const ORGANISATION = argv.o;
-const GITHUB_PERSONAL_ACCESS_TOKEN = argv.k;
-const USE_FT_PEOPLE_REPOSITORY = argv.p;
+const {
+	o: ORGANISATION,
+	k: GITHUB_ACCESS_TOKEN,
+	p: USE_FT_PEOPLE_REPOSITORY,
+} = argv;
 
 const setProgress = spinner => (total = '?', progress) => {
 	spinner.text = `Fetched page ${progress}/${total}`;
@@ -48,7 +50,7 @@ const setProgress = spinner => (total = '?', progress) => {
 	try {
 		const users = await getUsers({
 			organisation: ORGANISATION,
-			githubAccessToken: GITHUB_PERSONAL_ACCESS_TOKEN,
+			githubAccessToken: GITHUB_ACCESS_TOKEN,
 			onProgress: setProgress(spinner),
 			useFtPeople: USE_FT_PEOPLE_REPOSITORY,
 		});
