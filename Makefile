@@ -4,6 +4,17 @@
 # Force NPM to use colours even when there is no tty
 NPM_INSTALL = OLD_COLOUR=$$(npm config get color) trap 'npm config set color $$OLD_COLOUR' EXIT; npm config set color always && npm install $1 $2
 
+# Export environment variables if a .env file is present.
+ifeq ($(ENV_EXPORTED),) # ENV vars not yet exported
+ifneq ("$(wildcard .env)","")
+sinclude .env
+export $(shell [ -f .env ] && sed 's/=.*//' .env)
+export ENV_EXPORTED=true
+$(info An .env file exists. The contents have been exported as environment variables.)
+endif
+endif
+
+
 # This task tells make how to 'build' n-gage. It npm installs n-gage, and
 # Once that's done it overwrites the file with its own contents - this
 # ensures the timestamp on the file is recent, so make won't think the file
@@ -18,6 +29,12 @@ node_modules/@financial-times/rel-engage/index.mk:
 # tasks it finds that match the missing file. So if n-gage *is* installed
 # it will just be included; if not, it will look for a task to run
 -include node_modules/@financial-times/rel-engage/index.mk
+.env:
+	make env
+
+.PHONY: env
+env: ## env: Generate a new .env file from Vault
+	./scripts/get-vault-env.js prod github-active-users github-active-users
 
 verify:
 

@@ -34,10 +34,6 @@ custom:
     accountId: '442980623726'
     environmentTag: p
 
-  local:
-    <<: *test_config
-    NODE_ENV: development
-
   eu-west-1:
     splunkIndexerArnVariable: aws-composer-auditing-global-stack.SplunkCloudIndexerLambdaarn
   regionFallback:
@@ -60,17 +56,9 @@ custom:
     stages:
      - prod
 
-  serverless-offline:
-    # httpsProtocol: certs
-    dontPrintOutput: true
-    host: local.in.ft.com
-    port: ${env:PORT, '3000'}
-    noTimeout: true
-
 plugins:
   - serverless-webpack
   - serverless-log-forwarding
-  - serverless-offline
 
 functions:
   reporter-generator:
