@@ -287,7 +287,7 @@ const getUsers = async ({
 			nodes.map(async node => {
 				const { publicRepositoriesContributedTo } = node;
 				if (publicRepositoriesContributedTo.pageInfo.hasNextPage) {
-					logger.info(
+					logger.debug(
 						{
 							event: 'USER_EXTRA_PUBLIC_REPOSITORIES',
 							login: node.login,
