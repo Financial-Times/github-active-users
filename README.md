@@ -12,6 +12,10 @@ Currently the runtime for this script is fairly slow due to batching in sizes of
 npx Financial-Times/github-active-users help
 ```
 
+### Deployment
+
+This application is also deployed as a serverless application, logging to splunk for reporting purposes.
+
 ## Output
 
 Currently only outputs to a table format with the following headers:
@@ -25,4 +29,6 @@ Currently only outputs to a table format with the following headers:
 
 The counts shown indicate the count of repositories for which there are any contribution (issues/PRs/commits/PR code reviews), not the total count of contributions for each repository.
 
-The future intent is to log regularly either to Prometheus Push Gateway or to Splunk for reporting.
+## Troubleshooting
+
+As well as the afformentioned 502 errors when increasing batch size, occasionally 403s are encountered due to github rate limiting. There is internal logic to retry as long as the `Retry-After` header is within a threshold of 70 seconds, however if this is persistent it may be prudent to make a change to throttle to 1 request per second to the github API.
