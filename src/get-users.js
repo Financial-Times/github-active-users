@@ -80,7 +80,7 @@ const getGithubGraphQlClient = githubAccessToken =>
 		retry: {
 			retries: 2,
 			methods: ['POST'],
-			statusCodes: [403],
+			statusCodes: [403, 502],
 			maxRetryAfter: 70,
 		},
 		hooks: {
