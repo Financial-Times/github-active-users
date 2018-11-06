@@ -11,13 +11,13 @@ references:
   restore_node_modules: &restore_node_modules
     restore_cache:
       keys:
-        - v1-dependency-npm-{{ checksum "package.json" }}-
-        - v1-dependency-npm-{{ checksum "package.json" }}
+        - v1-dependency-npm-{{ checksum "package-lock.json" }}-
+        - v1-dependency-npm-{{ checksum "package-lock.json" }}
         - v1-dependency-npm-
 
   cache_node_modules: &cache_node_modules
     save_cache:
-      key: v1-dependency-npm-{{ checksum "package.json" }}-{{ epoch }}
+      key: v1-dependency-npm-{{ checksum "package-lock.json" }}-{{ epoch }}
       paths:
         - ./node_modules/
 
@@ -48,13 +48,13 @@ jobs:
           paths:
             - .
 
-  lint:
+  verify:
     executor: node
     steps:
       - *attach_workspace
 
       - run:
-          name: Lint
+          name: verify
           command: make verify -j 3
 
 
@@ -71,18 +71,23 @@ jobs:
           name: Serverless deploy prod
           command: make env && .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy
 
+      - run:
+          name: Monitor dependencies for security vulnerabilities
+          command: make security-monitor
+
 workflows:
   version: 2.1
   build-and-deploy:
     jobs:
       - install
-      - lint:
+      - verify:
+          context: rel-eng-creds
           requires:
             - install
       - release_prod:
           context: rel-eng-creds
           requires:
-            - lint
+            - verify
           filters:
             branches:
               only: master
