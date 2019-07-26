@@ -63,9 +63,7 @@ const format = users => {
 	);
 
 	logTable(
-		`${
-			sortedContributingUsersDescendingByContributions.length
-		} contributing users fetched`,
+		`${sortedContributingUsersDescendingByContributions.length} contributing users fetched`,
 		[
 			'name',
 			'login',
@@ -78,9 +76,7 @@ const format = users => {
 		sortedContributingUsersDescendingByContributions,
 	);
 	logTable(
-		`${
-			sortedNonPrivateContributingUsersByLogin.length
-		} users with no contributions fetched`,
+		`${sortedNonPrivateContributingUsersByLogin.length} users with no contributions fetched`,
 		[
 			'name',
 			'login',

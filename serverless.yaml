@@ -5,7 +5,7 @@ frameworkVersion: ">=1.2.8 <2.0.0"
 
 provider:
   name: aws
-  runtime: nodejs8.10
+  runtime: nodejs10.x
   stackTags:
     description: Audit active Github users
     systemCode: ${self:service}
@@ -48,11 +48,12 @@ custom:
       forceInclude:
 
   alerts:
-    # TODO: add alert topics
     function:
       - functionErrors
     definitions:
       functionErrors:
+        # name alarm so it is ingested into Heimdall
+        nameTemplate: '$[functionName] error rate is high systemCode=${self:provider.service},environment=${self:custom.${self:provider.stage}.environmentTag},severity=3'
         description: 'Error count breached threshold. <${self:custom.runbookUrl}|View Runbook>'
         treatMissingData: ignore
         threshold: 1

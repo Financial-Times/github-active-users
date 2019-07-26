@@ -43,7 +43,7 @@ const getUsersQuery = ({ cursor, first, organisation }) => {
 
 	return `{
 	organization(login: "${organisation}") {
-		members(${membersQuery}) {
+		membersWithRole(${membersQuery}) {
 			nodes {
 				login
 				name
@@ -230,7 +230,7 @@ const fetchUsers = async ({ cursor, client, organisation }) => {
 		getUsersQuery({ cursor, first: USERS_PAGE_SIZE, organisation }),
 	);
 	const { body } = response;
-	if (!has(body, 'data.organization.members')) {
+	if (!has(body, 'data.organization.membersWithRole')) {
 		logger.error(
 			{
 				body,
@@ -244,7 +244,7 @@ const fetchUsers = async ({ cursor, client, organisation }) => {
 		nodes,
 		totalCount,
 		pageInfo: { endCursor, hasNextPage },
-	} = body.data.organization.members;
+	} = body.data.organization.membersWithRole;
 	return {
 		nodes,
 		totalCount,

@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  change-api: financial-times/change-api@0.24.0
+
 references:
   workspace_root: &workspace_root
     ~/project/
@@ -24,10 +27,10 @@ references:
 executors:
   node:
     docker:
-      - image: circleci/node:8.12.0-browsers
+      - image: circleci/node:10-browsers
   python-node:
     docker:
-      - image: circleci/python:3.6.6-node
+      - image: circleci/python:3.7-node
 
 jobs:
   install:
@@ -69,7 +72,7 @@ jobs:
 
       - deploy:
           name: Serverless deploy prod
-          command: make env && .circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy
+          command: make prod-env && ./node_modules/@financial-times/rel-engage/packages/circleci/do-exclusively.sh --branch $CIRCLE_BRANCH make deploy
 
       - run:
           name: Monitor dependencies for security vulnerabilities
@@ -88,6 +91,17 @@ workflows:
           context: rel-eng-creds
           requires:
             - verify
+          filters:
+            branches:
+              only: master
+      - change-api/release-log:
+          name: release-log_prod
+          context: rel-eng-creds
+          requires:
+            - release_prod
+          systemCode: "github-active-users"
+          slackChannels: rel-eng-changes
+          environment: "prod"
           filters:
             branches:
               only: master

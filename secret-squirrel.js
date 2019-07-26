@@ -1,7 +1,8 @@
 module.exports = {
 	files: {
 		allow: [
-			'.prettierignore'
+			'.github/CODEOWNERS',
+			'.nvmrc'
 		],
 		allowOverrides: []
 	},

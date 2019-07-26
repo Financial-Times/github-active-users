@@ -14,6 +14,8 @@ $(info An .env file exists. The contents have been exported as environment varia
 endif
 endif
 
+ENVIRONMENT = production
+PROJECT_NAME = github-active-users
 
 # This task tells make how to 'build' n-gage. It npm installs n-gage, and
 # Once that's done it overwrites the file with its own contents - this
@@ -29,16 +31,7 @@ node_modules/@financial-times/rel-engage/index.mk:
 # tasks it finds that match the missing file. So if n-gage *is* installed
 # it will just be included; if not, it will look for a task to run
 -include node_modules/@financial-times/rel-engage/index.mk
-.env:
-	make env
 
-.PHONY: env
-env: ## env: Generate a new .env file from Vault
-	./scripts/get-vault-env.js -e prod -a github-active-users
-
-verify:
-
-install:
-
+.PHONY: deploy
 deploy: ## deploy: Deploy serverless application to O&R production account
 	serverless deploy --stage prod
