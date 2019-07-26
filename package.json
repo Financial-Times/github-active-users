@@ -21,6 +21,8 @@
   "devDependencies": {
     "@financial-times/rel-engage": "^7.1.2",
     "node-fetch": "^2.2.1",
-    "serverless-plugin-aws-alerts": "^1.2.4"
+    "serverless": "^1.48.4",
+    "serverless-plugin-aws-alerts": "^1.2.4",
+    "serverless-log-forwarding": "^1.4.0"
   }
 }

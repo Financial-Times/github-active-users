@@ -1,7 +1,7 @@
 service:
   name: github-active-users
 
-frameworkVersion: ">=1.2.8 <2.0.0"
+frameworkVersion: ">=1.48.0 <2.0.0"
 
 provider:
   name: aws
@@ -18,6 +18,7 @@ provider:
   memorySize: 256
   timeout: 300
   logRetentionInDays: 30
+  versionFunctions: false
   deploymentBucket: artefacts.${self:service.name}.${self:custom.accountId}.${self:provider.region}
   environment:
     ENVIRONMENT: ${self:provider.stage}
@@ -40,20 +41,13 @@ custom:
   regionFallback:
     splunkIndexerArnVariable: aws-composer-auditing-${self:provider.region}-splunk.SplunkCloudIndexerGenericLambdaArn
 
-  webpack:
-    webpackConfig: ./node_modules/@financial-times/rel-engage/packages/serverless/webpack.config.js
-    # Enable to bundle used node_modules files separately to the function bundle
-    # this is slow but may be useful if a module is incompatible with webpack
-    includeModules:
-      forceInclude:
-
   alerts:
     function:
       - functionErrors
     definitions:
       functionErrors:
         # name alarm so it is ingested into Heimdall
-        nameTemplate: '$[functionName] error rate is high systemCode=${self:provider.service},environment=${self:custom.${self:provider.stage}.environmentTag},severity=3'
+        nameTemplate: '$[functionName] error rate is high systemCode=${self:service.name},environment=${self:custom.${self:provider.stage}.environmentTag},severity=3'
         description: 'Error count breached threshold. <${self:custom.runbookUrl}|View Runbook>'
         treatMissingData: ignore
         threshold: 1
@@ -68,7 +62,6 @@ custom:
      - prod
 
 plugins:
-  - serverless-webpack
   - serverless-plugin-aws-alerts
   - serverless-log-forwarding
 
@@ -81,8 +74,3 @@ functions:
           input: '{}'
           rate: rate(1 hour)
           enabled: true
-
-package:
-  # Generate a separate webpack bundle for each function
-  individually: true
-  # We do not include include/exclude as this is handled by serverless-webpack
