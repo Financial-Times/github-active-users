@@ -58,7 +58,7 @@ jobs:
 
       - run:
           name: verify
-          command: make verify -j 3
+          command: make verify -j 4
 
 
   release_prod:

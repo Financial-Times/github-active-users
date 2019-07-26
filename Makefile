@@ -34,4 +34,4 @@ node_modules/@financial-times/rel-engage/index.mk:
 
 .PHONY: deploy
 deploy: ## deploy: Deploy serverless application to O&R production account
-	serverless deploy --stage prod
+	npx serverless deploy --stage prod
