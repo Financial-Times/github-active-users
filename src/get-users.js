@@ -7,7 +7,7 @@ const got = require('got');
 const https = require('https');
 
 // Queries are fairly slow with large results. Setting this too large busts the github API and results in 502s
-const USERS_PAGE_SIZE = 5;
+const USERS_PAGE_SIZE = 8;
 
 const USER_PUBLIC_REPOSITORIES_PAGE_SIZE = 50;
 

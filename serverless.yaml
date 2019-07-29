@@ -16,8 +16,8 @@ provider:
   # This role should be created using aws-composer. This is looked up against the current account
   role: arn:aws:iam::${self:custom.accountId}:role/FTApplicationRoleFor_${self:service.name}
   memorySize: 256
-  timeout: 300
-  logRetentionInDays: 30
+  timeout: 900
+  logRetentionInDays: 14
   versionFunctions: false
   deploymentBucket: artefacts.${self:service.name}.${self:custom.accountId}.${self:provider.region}
   environment:
