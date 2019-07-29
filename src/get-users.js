@@ -7,7 +7,7 @@ const got = require('got');
 const https = require('https');
 
 // Queries are fairly slow with large results. Setting this too large busts the github API and results in 502s
-const USERS_PAGE_SIZE = 8;
+const USERS_PAGE_SIZE = 9;
 
 const USER_PUBLIC_REPOSITORIES_PAGE_SIZE = 50;
 
@@ -77,7 +77,6 @@ const getGithubGraphQlClient = githubAccessToken =>
 			Authorization: `bearer ${githubAccessToken}`,
 			'User-Agent': 'FT-github-active-users',
 		},
-
 		json: true,
 		retry: {
 			retries: 2,
@@ -119,6 +118,12 @@ const makeRequest = onePerSecond(async (client, query) => {
 		});
 	} catch (error) {
 		if (has(error, 'response')) {
+			const headers = error.response.headers
+				.entries()
+				.reduce((result, [key, value]) => {
+					result[key] = value;
+					return result;
+				}, {});
 			logger.error(
 				{
 					errors:
@@ -126,6 +131,7 @@ const makeRequest = onePerSecond(async (client, query) => {
 						error.response.body ||
 						error.message,
 					statusCode: error.statusCode,
+					headers,
 				},
 				'The response returned with errors',
 			);

@@ -4,7 +4,22 @@ const logger = require('@financial-times/lambda-logger');
 const getUsers = require('../get-users');
 const splunkFormatter = require('../formatters/splunk');
 
-const handler = async () => {
+let previousRequestId;
+
+const handler = async (event, context) => {
+	if (!previousRequestId) {
+		previousRequestId = context.AwsRequestId;
+	}
+	if (previousRequestId === context.AwsRequestId) {
+		logger.info(
+			{ event: 'SKIPPED_RETRY', requestId: previousRequestId },
+			'Skipping retry to avoid Github rate limit.',
+		);
+		return {
+			message: 'Skipping retry to avoid Github rate limit.',
+			requestId: previousRequestId,
+		};
+	}
 	logger.info(
 		{ event: 'USER_LOGGING_HANDLER_START' },
 		'User logging handler started',
