@@ -7,7 +7,9 @@ const got = require('got');
 const https = require('https');
 
 // Queries are fairly slow with large results. Setting this too large busts the github API and results in 502s
-const USERS_PAGE_SIZE = 10;
+const USERS_PAGE_SIZE = 5;
+
+const USER_PUBLIC_REPOSITORIES_PAGE_SIZE = 50;
 
 const getRepositoryQuery = ({ cursor, privacy, pageSize = 1 }) => {
 	const repositoriesQuery = [
@@ -144,7 +146,7 @@ const getUserPublicRepositories = async ({ login, startCursor, client }) => {
 				user(login:"${login}") {
 					repositoriesContributedTo: ${getRepositoryQuery({
 						privacy: 'PUBLIC',
-						pageSize: 100,
+						pageSize: USER_PUBLIC_REPOSITORIES_PAGE_SIZE,
 						cursor,
 					})}
 				}
