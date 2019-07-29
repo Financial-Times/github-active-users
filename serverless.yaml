@@ -16,7 +16,7 @@ provider:
   # This role should be created using aws-composer. This is looked up against the current account
   role: arn:aws:iam::${self:custom.accountId}:role/FTApplicationRoleFor_${self:service.name}
   memorySize: 256
-  timeout: 900
+  timeout: 450
   logRetentionInDays: 14
   versionFunctions: false
   deploymentBucket: artefacts.${self:service.name}.${self:custom.accountId}.${self:provider.region}
@@ -68,6 +68,7 @@ plugins:
 functions:
   reporter-generator:
     handler: src/handlers/user-logging-handler.handler
+    description: Generates Splunk reports for the activity level of FT Github users
     events:
       - schedule:
           description: 'Trigger Github Active users stats report'
