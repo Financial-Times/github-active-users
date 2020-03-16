@@ -17,7 +17,7 @@ Unsupported
 
 ## Lifecycle Stage
 
-Production
+Deprecated
 
 ## Host Platform
 
